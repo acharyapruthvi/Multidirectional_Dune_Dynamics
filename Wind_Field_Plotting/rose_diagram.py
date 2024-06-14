@@ -17,6 +17,38 @@ from matplotlib.colors import BoundaryNorm, ListedColormap
 
 plt.rcParams.update({'font.size': 10})  
 
+def find_max_min_windspeed(folder_path):
+    """
+    Reads all CSV files in the specified folder, extracts the 'shear_rate' column,
+    and returns the maximum and minimum shear rates.
+
+    Args:
+        folder_path (str): Path to the folder containing CSV files.
+
+    Returns:
+        tuple: A tuple containing the maximum and minimum shear rates.
+    """
+    try:
+        max_wind_speed = float('-inf')
+        min_wind_speed= float('inf')
+
+        for filename in os.listdir(folder_path):
+            if filename.lower().endswith('.csv'):
+                file_path = os.path.join(folder_path, filename)
+                df = pd.read_csv(file_path)
+                df['Wind_Speed'] = calculate_wind_speed(df['Um'], df['Vm']).round(0)
+                if 'Wind_Speed' in df.columns:
+                    max_wind_speed = max(max_wind_speed, df['Wind_Speed'].max())
+                    min_wind_speed = min(min_wind_speed, df['Wind_Speed'].min())
+
+        if max_wind_speed != float('-inf') and min_wind_speed != float('inf'):
+            return max_wind_speed, min_wind_speed
+        else:
+            return None, None  # No valid data found in the CSV files
+    except FileNotFoundError:
+        print(f"Error: Folder '{folder_path}' not found.")
+        return None, None
+
 # Function to calculate wind direction
 def calculate_wind_direction(um, vm):
     return (math.degrees(math.atan2(um, vm)) + 360) % 360
@@ -37,8 +69,7 @@ def process_combined_dataframe(df, filenames, show_colorbar, show_cardinal, ls_r
         
         fig = plt.figure(figsize=(1.2*2.125, 1.2*2.7))
         ax = WindroseAxes.from_ax(fig=fig)
-        max_wind_speed = 18
-        bins = np.linspace(0, max_wind_speed, 6)
+        bins = np.linspace(0, max_speed, 6)
         bins = [ round(elem, 1) for elem in bins ]
         # Custom RGB colors
         custom_colors = [
@@ -85,6 +116,8 @@ save_folder = ["/home/pruthvi/Desktop/HELLAS_SIMS/CODE/East_Hellespontus","/home
 ls_ranges = [(0, 90), (91, 180), (181, 270), (271, 360), (286.4, 348.9), (348.9, 11), (11, 208.2), (208.2, 269.4), (269.4, 311.9), (311.9, 7.7)]
 
 for ii in range(len(folder_path)):
+    max_speed, min_speed = find_max_min_windspeed(folder_path[ii]) # Calculate the maximum and minimum shear rate for all of the CSV files in the directory
+    print(max_speed, min_speed) # Printing for debugging purposes
     for start_ls, end_ls in ls_ranges:
         show_colorbar = (start_ls, end_ls) in [(0, 90), (286.4, 348.9)]
         show_cardinal = not show_colorbar
