@@ -13,6 +13,7 @@ import math
 from datetime import datetime
 import seaborn as sns
 from windrose import WindroseAxes
+from matplotlib.colors import BoundaryNorm, ListedColormap
 import matplotlib.colors as mcolors
 import csv
 ##############################################################################################################
@@ -89,13 +90,27 @@ def process_combined_dataframe(df, filenames, show_colorbar, show_cardinal, ls_r
         if len(set(bins)) == 1:  # All bins are the same
             bins = [bins[0] - 0.1, bins[0] + 0.1]
 
-        bars = ax.bar(df['Wind Direction'], df['Shear_Rate'], normed=True, opening=1.0, bins=bins, cmap=cm.gist_rainbow, nsector=num_directions) # Plot the windrose plot based on the precentage and wind direction. 
+        # Custom RGB colors
+        custom_colors = [
+            (1, 112, 254),        # blue (lowest bound)
+            (97, 254, 30),        # green   |
+            (255, 255, 1),        # yellow  | 
+            (255, 214, 33),     # orange    |
+            (255, 34, 22)         # red (highest bound)
+        ]
+        # Divide each color value by 255
+        normalized_colors = [(r/255, g/255, b/255) for r, g, b in custom_colors]
+        custom_cmap = ListedColormap(normalized_colors)
+        bars = ax.bar(df['Wind Direction'], df['Shear_Rate'], normed=True, opening=1.0, bins=bins, cmap=custom_cmap, nsector=num_directions) # Plot the windrose plot based on the precentage and wind direction. 
+
+        ax.set_radii_angle(angle=120)  # Adjust angle if necessary
+        ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: '{:.0f}%'.format(y)))  # Formatting as percentage
 
         if not show_cardinal: # False to show the cardinal directions
             ax.set_xticklabels([])
 
         if show_colorbar: # True to show the colorbar
-            cmap = cm.gist_rainbow
+            cmap = custom_cmap
             boundaries = bins
             norm = mcolors.BoundaryNorm(boundaries, cmap.N, clip=True) # Set up the colorbar
             ax_cbar = fig.add_axes([0.1, 0.15, 0.8, 0.02])  # Position of the colorbar
@@ -152,4 +167,3 @@ for ii in range(len(folder_path)): # Loop through the folder paths
             process_combined_dataframe(concatenated_df, valid_files, show_colorbar, show_cardinal, (start_ls, end_ls),save_directory=save_folder[ii]) # Create the combined plot for the Ls range
         else:
             print(f"No data files found in the specified Ls range: {start_ls}-{end_ls}.") # Error message if no valid data found in the CSV files
-
