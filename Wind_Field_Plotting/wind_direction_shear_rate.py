@@ -75,38 +75,40 @@ df_wind_speed['Rolling_Mean'] = df_wind_speed['Wind_Direction'].rolling(window=i
 ###### Plotting the data #####################
 fig, ax = plt.subplots()
 
-# Creating the scatter plot where the size reprents the shear stress
+# Creating the scatter plot where the size represents the shear stress
 sc = ax.scatter(
-    df_wind_speed['Ls'], # x values
-    df_wind_speed['Wind_Direction'], # y values
-    s = df_wind_speed['Shear_Stress'] * 2000, # Size of the scatter points depends on the respective shear stress values scaled to show the scatter points better
-    c = df_wind_speed['time_seconds'], # The colour of the scatter points depends on the respective time in seconds - from 00:00:00
-    cmap = 'coolwarm' # Colour map of choice, goes from blue to red 
+    df_wind_speed['Ls'],
+    df_wind_speed['Wind_Direction'],
+    s=df_wind_speed['Shear_Stress'] * 2000,
+    c=df_wind_speed['time_seconds'],
+    cmap='coolwarm'
 )
-# Adding the various moving averages to the scatter plot 
+
+# Adding the various moving averages to the scatter plot
 ax.plot(df_wind_speed['Ls'], df_wind_speed['Rolling_Min'], label='Rolling Min', color='black', linestyle='dotted')
 ax.plot(df_wind_speed['Ls'], df_wind_speed['Rolling_Max'], label='Rolling Max', color='tab:green', linestyle='--')
 ax.plot(df_wind_speed['Ls'], df_wind_speed['Rolling_Mean'], label='Rolling Mean', color='tab:red')
 
-# Creating a custom colour bar that time in HH:MM:SS format
-cbar = plt.colorbar(sc, ax=ax)
+# Calculate ticks for each hour (assuming your data covers 24 hours)
+hour_ticks = np.linspace(0, 23 * 3600, 24)  # 24 ticks for 24 hours
+
+# Creating a custom color bar that displays time in HH:00 format
+cbar = plt.colorbar(sc, ax=ax, ticks=hour_ticks)
 cbar.ax.yaxis.set_major_formatter(plt.FuncFormatter(format_func))
 
-# Creating a custom legend for the scatter plot
+# Custom legend for the scatter plot
 sizes = np.linspace(
-    np.min(df_wind_speed['Shear_Stress']), # Smallest value you want to show on the scatter plot
-    np.max(df_wind_speed['Shear_Stress']), # Largest value you want to show on the scatter plot
-    4 # Number of points you want to display on the legend
+    np.min(df_wind_speed['Shear_Stress']),
+    np.max(df_wind_speed['Shear_Stress']),
+    8  # Number of points you want to display on the legend
 )
-sizes = np.around(sizes, 2) # Rounding the legend shear stress to second decimal places
-# Adding custom sizes to the legned 
+sizes = np.around(sizes, 2)
 for size in sizes:
     ax.scatter([], [], s=size * 2000, c="black", label=f'Shear Stress {size}')
-# Displaying the legend to the plot
-ax.legend(loc = 'best')
+ax.legend(loc='best')
 
 # Setting the axes label
 plt.xlabel('Ls')
 plt.ylabel('Wind Direction [°E]')
-plt.title('Wind Direction vs Ls for throughout the day with a threshold of 0.01 Pa')
+plt.title('Wind Direction vs Ls throughout the day with a threshold of 0.01 Pa')
 plt.show()
